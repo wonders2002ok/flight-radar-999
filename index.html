@@ -397,12 +397,14 @@
         // ========== 状态 ==========
         let markers = {};
         let autoRefreshTimer = null;
-        const AUTO_REFRESH_INTERVAL = 15000; // 15秒自动刷新
+        const AUTO_REFRESH_INTERVAL = 10000; // 10秒自动刷新
 
         // ========== 数据获取 ==========
         async function fetchFlights() {
             try {
-                const resp = await fetch('/api/flights');
+                // 如果使用 Live Server(5500) 预览，自动请求 5000 端口的 Flask API
+                const apiBase = window.location.port === '5500' ? 'http://127.0.0.1:5000' : '';
+                const resp = await fetch(`${apiBase}/api/flights`);
                 const data = await resp.json();
                 return data;
             } catch (e) {
