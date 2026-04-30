@@ -10,7 +10,9 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="repla
 sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 import time
+import json
 import logging
+from pathlib import Path
 from flask import Flask, jsonify
 from flask_cors import CORS
 from FlightRadar24 import FlightRadar24API
@@ -68,7 +70,12 @@ def fetch_flights_data():
             baro_altitude = round(f.altitude * 0.3048, 1) if f.altitude is not None else None
             velocity = round(f.ground_speed * 1.852, 1) if f.ground_speed is not None else None
             vertical_rate = round(f.vertical_speed * 0.00508, 1) if f.vertical_speed is not None else None
-            
+
+            raw_squawk = f.squawk if f.squawk else None
+            emergency = None
+            if raw_squawk in ("7700", "7600", "7500"):
+                emergency = raw_squawk
+
             flights.append({
                 "icao24": icao24.lower(),
                 "callsign": callsign,
@@ -81,7 +88,8 @@ def fetch_flights_data():
                 "true_track": f.heading if f.heading is not None else 0,
                 "vertical_rate": vertical_rate,
                 "geo_altitude": baro_altitude,
-                "squawk": f.squawk if f.squawk else None,
+                "squawk": raw_squawk,
+                "emergency": emergency,
                 "category": f.aircraft_code,
             })
             
@@ -154,8 +162,19 @@ def get_stats():
 @app.route("/")
 def index():
     """前端页面"""
-    from pathlib import Path
-    return Path("index.html").read_text(encoding="utf-8")
+    return Path("templates/index.html").read_text(encoding="utf-8")
+
+@app.route("/api/airline_map")
+def airline_map():
+    """航司 IATA → 名称映射"""
+    data = json.loads(Path("data/airline_map.json").read_text(encoding="utf-8"))
+    return jsonify(data)
+
+@app.route("/api/aircraft_map")
+def aircraft_map():
+    """机型代码 → 名称映射"""
+    data = json.loads(Path("data/aircraft_map.json").read_text(encoding="utf-8"))
+    return jsonify(data)
 
 if __name__ == "__main__":
     print("🛫 中国航班实时雷达启动中...")

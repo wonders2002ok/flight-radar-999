@@ -12,7 +12,7 @@ echo.
 python -c "import FlightRadar24" >nul 2>&1
 if %errorlevel% neq 0 (
     echo [INFO] Installing required dependencies...
-    pip install FlightRadar24API
+    pip install FlightRadarAPI
 )
 
 :: Start Flask server in a new window
